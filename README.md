@@ -16,7 +16,7 @@ This application was built by Arun Sundaram, Prashant Pokhriyal, and Jiaying Li.
 <details>
   <summary>Running the project</summary>
   
-  To start the backend run `source env/bin/activate` then `python3 manage.py runserver` in the main directory  
-  To start the frontend run `yarn start` in the frontend directory
+  To start the backend run `source env/bin/activate` then `python3 manage.py runserver` while in the main directory  
+  To start the frontend run `yarn start` while in the frontend directory
   
 </details>
