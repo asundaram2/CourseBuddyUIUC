@@ -1,0 +1,111 @@
+CREATE DEFINER=`root`@`localhost` PROCEDURE `insertUserData`(
+username VARCHAR(45),
+major VARCHAR(45),
+email VARCHAR(45),
+year VARCHAR(45),
+crn INT
+)
+BEGIN
+	IF NOT EXISTS(SELECT * FROM coursebuddy.StudyGroup sg WHERE sg.Username = username) THEN
+	BEGIN
+		INSERT INTO coursebuddy.StudyGroup(Username, Major, Email, Year) VALUES (username, major, email, year);
+	END;
+    ELSE
+    BEGIN
+		UPDATE coursebuddy.StudyGroup sg SET sg.Major = major, sg.Year = year WHERE sg.Username = username;
+    END;
+    END IF;
+    IF NOT EXISTS(SELECT * FROM coursebuddy.registrations r WHERE r.Username = username AND r.CRN = crn)
+		AND EXISTS(SELECT * FROM coursebuddy.sp19 s where s.CRN = crn) THEN
+    BEGIN
+		INSERT INTO coursebuddy.Registrations(Username, CRN) VALUES (username, crn);
+    END;
+    END IF;
+END
+
+
+
+#called as `test` in views.py
+CREATE DEFINER=`root`@`localhost` PROCEDURE `studyBuddyFinder`(
+IN firstpreference VARCHAR(100),
+IN secondpreference VARCHAR(100),
+IN thirdpreference VARCHAR(100),
+name VARCHAR(255),
+crnn INT
+)
+BEGIN
+
+    CREATE TABLE IF NOT EXISTS temp (Username varchar(45), Major varchar(45), Email varchar(45), Year varchar(45), CRN int);
+	INSERT INTO temp (Username,Major,Email,Year,CRN)
+    SELECT Username,Major,Email,Year,sp19.CRN
+	FROM (StudyGroup NATURAL JOIN registrations AS S)join sp19 on S.CRN = sp19.CRN
+	WHERE sp19.Course = (SELECT Course FROM sp19 WHERE CRN = crnn )
+	AND sp19.Subject = (SELECT Subject FROM sp19 WHERE CRN = crnn);
+
+
+    SET @s = CONCAT('
+    (
+    SELECT * FROM (
+    SELECT * FROM temp
+    WHERE username !=', QUOTE(name), ') as a
+    WHERE a.`', firstpreference, '`= (SELECT`', firstpreference,'` FROM StudyGroup WHERE username = ', QUOTE(name), ')
+    and
+    a.`', secondpreference, '`= (SELECT`', secondpreference,'` FROM StudyGroup WHERE username = ', QUOTE(name), ')
+    and
+    a.`', thirdpreference, '`= (SELECT`', thirdpreference,'` FROM StudyGroup WHERE username = ', QUOTE(name), ')
+    )
+    UNION
+	(
+    SELECT * FROM (
+    SELECT * FROM temp
+    WHERE username !=', QUOTE(name), ') as a
+    WHERE a.`', firstpreference, '`= (SELECT`', firstpreference,'` FROM StudyGroup WHERE username = ', QUOTE(name), ')
+    and
+    a.`', secondpreference, '`= (SELECT`', secondpreference,'` FROM StudyGroup WHERE username = ', QUOTE(name), ')
+    )
+	UNION
+	(
+    SELECT * FROM (
+    SELECT * FROM temp
+    WHERE username !=', QUOTE(name), ') as a
+    WHERE a.`', firstpreference, '`= (SELECT`', firstpreference,'` FROM StudyGroup WHERE username = ', QUOTE(name), ')
+    and
+    a.`', thirdpreference, '`= (SELECT`', thirdpreference,'` FROM StudyGroup WHERE username = ', QUOTE(name), ')
+    )
+	UNION
+	(
+    SELECT * FROM (
+    SELECT * FROM temp
+    WHERE username !=', QUOTE(name), ') as a
+    WHERE a.`', secondpreference, '`= (SELECT`', secondpreference,'` FROM StudyGroup WHERE username = ', QUOTE(name), ')
+    and
+    a.`', thirdpreference, '`= (SELECT`', thirdpreference,'` FROM StudyGroup WHERE username = ', QUOTE(name), ')
+    )
+	UNION
+	(
+    SELECT * FROM (
+    SELECT * FROM temp
+    WHERE username !=', QUOTE(name), ') as a
+    WHERE a.`', firstpreference, '`= (SELECT`', firstpreference,'` FROM StudyGroup WHERE username = ', QUOTE(name), ')
+    )
+	UNION
+	(
+    SELECT * FROM (
+    SELECT * FROM temp
+    WHERE username !=', QUOTE(name), ') as a
+    WHERE a.`', secondpreference, '`= (SELECT`', secondpreference,'` FROM StudyGroup WHERE username = ', QUOTE(name), ')
+    )
+	UNION
+	(
+    SELECT * FROM (
+    SELECT * FROM temp
+    WHERE username !=', QUOTE(name), ') as a
+    WHERE a.`', thirdpreference, '`= (SELECT`', thirdpreference,'` FROM StudyGroup WHERE username = ', QUOTE(name), ')
+    )
+    '
+    );
+    PREPARE stmt FROM @s;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt;
+    DROP TABLE temp;
+END
