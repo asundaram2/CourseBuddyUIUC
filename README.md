@@ -8,6 +8,8 @@ They can view ratings other users have given to sections they’re interested in
 For study group formation, users enter information on personal attributes such as major, grade, and current courses, and then can search for users matching those attributes. 
 They can even rank their preferences for finding fellow users, depending on which attributes are most important to them in finding potential teammates or study buddies.
 
+The frontend was made using ReactJS and the backend used Django. The database is a SQL database hosted using MySQL. 
+
 This application was built by Arun Sundaram, Prashant Pokhriyal, and Jiaying Li.  
 
 
